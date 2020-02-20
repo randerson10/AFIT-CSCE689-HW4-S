@@ -16,7 +16,8 @@ public:
    ~TCPConn();
 
    // The current status of the connection
-   enum statustype { s_none, s_connecting, s_connected, s_datatx, s_datarx, s_waitack, s_hasdata };
+   enum statustype { s_none, s_connecting, s_connected, s_datatx, s_datarx, s_waitack, s_hasdata, 
+                     s_wauthstring, s_wencauthstring, s_sauthstring, s_sencauthstring};
 
    statustype getStatus() { return _status; };
 
@@ -76,6 +77,11 @@ protected:
    void waitForData();
    void awaitAck();
 
+   void sendAuthString();
+   void sendEncryptedAuthString();
+   void waitForAuthString();
+   void waitForEncryptedAuthString();
+
    // Looks for commands in the data stream
    std::vector<uint8_t>::iterator findCmd(std::vector<uint8_t> &buf,
                                                    std::vector<uint8_t> &cmd);
@@ -107,12 +113,17 @@ private:
    std::vector<uint8_t> _inputbuf;
    bool _data_ready;    // Is the input buffer full and data ready to be read?
 
+
+   bool _sentEncAuth = false;
+
+
    // Store outgoing data to be sent over the network
    std::vector<uint8_t> _outputbuf;
 
    CryptoPP::SecByteBlock &_aes_key; // Read from a file, our shared key
-   std::string _authstr;   // remembers the random authorization string sent
-
+   std::string _sentAuthStr;   // remembers the random authorization string sent
+   std::string _recAuthStr;
+   
    unsigned int _verbosity;
 
    LogMgr &_server_log;

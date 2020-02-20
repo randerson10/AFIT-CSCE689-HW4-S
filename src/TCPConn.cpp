@@ -181,6 +181,24 @@ void TCPConn::handleConnection() {
          case s_connected:
             waitForSID();
             break;
+
+
+
+         case s_wauthstring:
+            waitForAuthString();
+            break;
+         case s_sauthstring:
+            sendAuthString();
+            break;
+
+         case s_wencauthstring:
+            waitForEncryptedAuthString();
+            break;
+
+         case s_sencauthstring:
+            sendEncryptedAuthString();
+            break;
+
    
          // Client: connecting user - replicate data
          case s_datatx:
@@ -223,8 +241,9 @@ void TCPConn::sendSID() {
    std::vector<uint8_t> buf(_svr_id.begin(), _svr_id.end());
    wrapCmd(buf, c_sid, c_endsid);
    sendData(buf);
-
-   _status = s_datatx; 
+    
+   _status = s_wauthstring;
+   //_status = s_datatx;
 }
 
 /**********************************************************************************************
@@ -254,13 +273,109 @@ void TCPConn::waitForSID() {
       setNodeID(node.c_str());
 
       // Send our Node ID
-      buf.assign(_svr_id.begin(), _svr_id.end());
-      wrapCmd(buf, c_sid, c_endsid);
-      sendData(buf);
+      // buf.assign(_svr_id.begin(), _svr_id.end());
+      // wrapCmd(buf, c_sid, c_endsid);
+      // sendData(buf);
 
-      _status = s_datarx;
+      // _status = s_datarx;
+      
+      
+      
+      
+      _status = s_sauthstring;
    }
 }
+
+void TCPConn::sendAuthString() {
+   std::string str;
+   genRandString(str, 16);
+
+   _sentAuthStr = str;
+
+   std::vector<uint8_t> buf(_sentAuthStr.begin(), _sentAuthStr.end());
+   wrapCmd(buf, c_auth, c_endauth);
+   sendData(buf);
+
+   if(_svr_id.empty() && _sentEncAuth)
+      _status = s_wencauthstring;
+   else 
+      _status = s_wauthstring;
+}
+
+void TCPConn::waitForAuthString() {
+   // If data on the socket, should be our Auth string from our host server
+   if (_connfd.hasData()) {
+      std::vector<uint8_t> buf;
+
+      if (!getData(buf))
+         return;
+
+      if (!getCmdData(buf, c_auth, c_auth)) {
+         std::stringstream msg;
+         msg << "Auth string from connecting client invalid format. Cannot authenticate.";
+         _server_log.writeLog(msg.str().c_str());
+         disconnect();
+         return;
+      }
+      //saving the auth string that was sent to me
+      std::string str(buf.begin(), buf.end());
+      _recAuthStr = str;
+
+      
+      
+      _status = s_sencauthstring;
+   }
+}
+
+void TCPConn::sendEncryptedAuthString() {
+   std::vector<uint8_t> buf(_recAuthStr.begin(), _recAuthStr.end());
+   wrapCmd(buf, c_auth, c_endauth);
+   sendEncryptedData(buf);
+
+   if(_svr_id.empty()) {
+      _sentEncAuth = true;
+      sendAuthString();
+   }
+
+   _status = s_wencauthstring;
+}
+
+void TCPConn::waitForEncryptedAuthString() {
+   if (_connfd.hasData()) {
+      std::vector<uint8_t> buf;
+
+      if (!getData(buf))
+         return;
+
+      decryptData(buf);
+
+      if (!getCmdData(buf, c_auth, c_auth)) {
+         std::stringstream msg;
+         msg << "Encrypted Auth string from connecting client invalid format. Cannot authenticate.";
+         _server_log.writeLog(msg.str().c_str());
+         disconnect();
+         return;
+      }
+
+      std::string str(buf.begin(), buf.end());
+      
+      if(str.compare(_sentAuthStr) == 0)
+         _status = s_datarx;
+      else {
+         std::stringstream msg;
+         msg << "Encrypted Auth string from connecting client does not match. Cannot authenticate.";
+         _server_log.writeLog(msg.str().c_str());
+         disconnect();
+         return;
+      }
+      
+   }
+}
+
+
+
+
+
 
 
 /**********************************************************************************************
@@ -372,6 +487,17 @@ void TCPConn::awaitAck() {
       disconnect();
    }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 /**********************************************************************************************
  * getData - Reads in data from the socket and checks to see if there's an end command to the
@@ -502,7 +628,12 @@ bool TCPConn::getCmdData(std::vector<uint8_t> &buf, std::vector<uint8_t> &startc
    if ((start == temp.end()) || (end == temp.end()))
       return false;
 
+//try{
    buf.assign(start + startcmd.size(), end);
+//} catch(std::bad_alloc e) {
+   //std::cout << e.what() << "\n";
+//}
+   
    return true;
 }
 
