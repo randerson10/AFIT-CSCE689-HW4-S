@@ -17,7 +17,7 @@ public:
 
    // The current status of the connection
    enum statustype { s_none, s_connecting, s_connected, s_datatx, s_datarx, s_waitack, s_hasdata, 
-                     s_cwauthstring, s_cwencauthstring, s_swauthstring, s_swencauthstring};
+                     s_cwauthstring, s_swencauthstring};
 
    statustype getStatus() { return _status; };
 
@@ -73,23 +73,14 @@ protected:
    // Functions to execute various stages of a connection 
    //client functions
    void sendSID();
+   void sendAuthString();
    void clientWaitForAuthString();
-   void clientWaitForEncryptedAuthString();
-   //void sendAuthStringAndEncryptedAuthString(std::string str);
+   void sendAuthStringAndEncryptedAuthString(std::string str);
 
    //server functions
    void waitForSID();
-   //void serverWaitForAuthAndEncryptedAuthString();
-   void serverWaitForAuthString();
-   void serverWaitForEncryptedAuthString();
-
-
-   void sendAuthString();
-   void sendEncryptedAuthString(std::string str);
-   //void waitForAuthString();
-   //void waitForEncryptedAuthString();
-
-
+   void serverWaitForAuthAndEncryptedAuthString();
+   void sendIDAndEncryptedAuthString(std::string str);
 
    void transmitData();
    void waitForData();
@@ -125,14 +116,12 @@ private:
    // Store incoming data to be read by the queue manager
    std::vector<uint8_t> _inputbuf;
    bool _data_ready;    // Is the input buffer full and data ready to be read?
-
+  
    // Store outgoing data to be sent over the network
    std::vector<uint8_t> _outputbuf;
 
    CryptoPP::SecByteBlock &_aes_key; // Read from a file, our shared key
    std::string _authStr;   // remembers the random authorization string sent
-   std::string _recAuthStr;
-
 
    unsigned int _verbosity;
 
