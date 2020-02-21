@@ -735,7 +735,7 @@ bool TCPConn::getCmdData(std::vector<uint8_t> &buf, std::vector<uint8_t> &startc
    auto start = findCmd(temp, startcmd);
    auto end = findCmd(temp, endcmd);
 
-   if ((start == temp.end()) || (end == temp.end()))
+   if ((start == temp.end()) || (end == temp.end()) || (start == end))
       return false;
 
    buf.assign(start + startcmd.size(), end);
