@@ -285,10 +285,7 @@ void TCPConn::waitForSID() {
       std::string node(buf.begin(), buf.end());
       setNodeID(node.c_str());
 
-      // Send our Node ID
-      // buf.assign(_svr_id.begin(), _svr_id.end());
-      // wrapCmd(buf, c_sid, c_endsid);
-      // sendData(buf);
+
 
       // _status = s_datarx;
       
@@ -382,6 +379,13 @@ std::cout << buf.data() << "\n";
       
       if(encauth.compare(_authStr) == 0) {
          _status = s_datarx;
+
+
+      // Send our Node ID
+      buf.assign(_svr_id.begin(), _svr_id.end());
+      wrapCmd(buf, c_sid, c_endsid);
+      sendData(buf);
+
          std::cout << "client has authenticated\n";
       } else {
          std::stringstream msg;
