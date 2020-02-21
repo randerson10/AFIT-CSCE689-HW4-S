@@ -17,7 +17,7 @@ public:
 
    // The current status of the connection
    enum statustype { s_none, s_connecting, s_connected, s_datatx, s_datarx, s_waitack, s_hasdata, 
-                     s_wauthstring, s_wencauthstring, s_sauthstring, s_sencauthstring};
+                     s_cwauthstring, s_cwencauthstring, s_swauthstring, s_swencauthstring};
 
    statustype getStatus() { return _status; };
 
@@ -71,16 +71,29 @@ public:
 
 protected:
    // Functions to execute various stages of a connection 
+   //client functions
    void sendSID();
+   void clientWaitForAuthString();
+   void clientWaitForEncryptedAuthString();
+   //void sendAuthStringAndEncryptedAuthString(std::string str);
+
+   //server functions
    void waitForSID();
+   //void serverWaitForAuthAndEncryptedAuthString();
+   void serverWaitForAuthString();
+   void serverWaitForEncryptedAuthString();
+
+
+   void sendAuthString();
+   void sendEncryptedAuthString(std::string str);
+   //void waitForAuthString();
+   //void waitForEncryptedAuthString();
+
+
+
    void transmitData();
    void waitForData();
    void awaitAck();
-
-   void sendAuthString();
-   void sendEncryptedAuthString();
-   void waitForAuthString();
-   void waitForEncryptedAuthString();
 
    // Looks for commands in the data stream
    std::vector<uint8_t>::iterator findCmd(std::vector<uint8_t> &buf,
@@ -100,7 +113,7 @@ private:
 
    bool _connected = false;
 
-   std::vector<uint8_t> c_rep, c_endrep, c_auth, c_endauth, c_ack, c_sid, c_endsid;
+   std::vector<uint8_t> c_rep, c_endrep, c_auth, c_endauth, c_ack, c_sid, c_endsid, c_encauth, c_endencauth;
 
    statustype _status = s_none;
 
@@ -113,17 +126,14 @@ private:
    std::vector<uint8_t> _inputbuf;
    bool _data_ready;    // Is the input buffer full and data ready to be read?
 
-
-   bool _sentEncAuth = false;
-
-
    // Store outgoing data to be sent over the network
    std::vector<uint8_t> _outputbuf;
 
    CryptoPP::SecByteBlock &_aes_key; // Read from a file, our shared key
-   std::string _sentAuthStr;   // remembers the random authorization string sent
+   std::string _authStr;   // remembers the random authorization string sent
    std::string _recAuthStr;
-   
+
+
    unsigned int _verbosity;
 
    LogMgr &_server_log;
