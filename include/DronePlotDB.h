@@ -13,7 +13,7 @@
 // create a new one up to 0x128 
 #define DBFLAG_NEW      0x1   // Was newly added to the database
 #define DBFLAG_SYNCD    0x2   // Has been sync'd
-#define DBFLAG_USER1    0x4   // Change as needed
+#define DBFLAG_CHECKED  0x4   // Change as needed
 #define DBFLAG_USER2    0x8   // Change as needed
 #define DBFLAG_USER3    0x16  // Change as needed
 #define DBFLAG_USER4    0x32

@@ -2,6 +2,7 @@
 #define REPLSERVER_H
 
 #include <map>
+#include <set>
 #include <memory>
 #include "QueueMgr.h"
 #include "DronePlotDB.h"
@@ -37,9 +38,17 @@ private:
 
    void addReplDronePlots(std::vector<uint8_t> &data);
    void addSingleDronePlot(std::vector<uint8_t> &data);
+   
+   //removes duplicate plot points from the database
+   void removeDuplicatePlots();
+   //checks the database to try to determine the timeskew of any node in this simulation
+   void checkDBForTimeOffset();
+   //updates the database by correcting node times based off the timeskew of that node
+   void correctTimeSkew();
+   //returns the authority(coordinator) to which nodes can compare their times with
+   unsigned int getAuthority();
 
    unsigned int queueNewPlots();
-
 
    QueueMgr _queue;    
 
@@ -63,6 +72,15 @@ private:
    // Used to bind the server
    std::string _ip_addr;
    unsigned short _port;
+
+   //the node ids of the nodes in this simulation
+   std::set<unsigned int> _node_ids;
+   //this map stores the node id and a time offset
+   std::map<unsigned int, int> _offsets;
+   //bool representing if any timeskew has been found in the simulation
+   bool _foundTimeOffset = false;
+   //bool representing if the timeskew for all nodes in this simulation have been found
+   bool _foundAllTimeOffsets = false;
 };
 
 
